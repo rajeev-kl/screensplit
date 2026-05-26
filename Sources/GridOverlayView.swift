@@ -25,8 +25,12 @@ struct GridOverlayView: View {
     let gridPadding: CGFloat = 0
     let gridSpacing: CGFloat = 0
     
+    @AppStorage("GridColumnsConfig") private var columnsConfig: Int = 0
+    @AppStorage("GridRowsConfig") private var rowsConfig: Int = 0
+    
     // Dynamic grid size based on screen
     var columns: Int {
+        if columnsConfig > 0 { return columnsConfig }
         if let screen = NSScreen.main {
             return max(4, Int(screen.frame.width / 400))
         }
@@ -34,6 +38,7 @@ struct GridOverlayView: View {
     }
     
     var rows: Int {
+        if rowsConfig > 0 { return rowsConfig }
         if let screen = NSScreen.main {
             return max(3, Int(screen.frame.height / 300))
         }
