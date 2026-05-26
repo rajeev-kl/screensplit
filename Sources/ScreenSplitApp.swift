@@ -177,10 +177,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let gapsItem = NSMenuItem(title: "Window Gaps", action: nil, keyEquivalent: "")
         gapsMenu = NSMenu()
         let gapOptions = [
-            (title: "None (0px)", value: 0),
-            (title: "Small (4px)", value: 4),
-            (title: "Medium (8px)", value: 8),
-            (title: "Large (12px)", value: 12)
+            (title: "None", value: 0),
+            (title: "Trickle", value: 2),
+            (title: "Brook", value: 4),
+            (title: "Stream", value: 6),
+            (title: "River", value: 8),
+            (title: "Torrent", value: 10)
         ]
         for opt in gapOptions {
             let item = NSMenuItem(title: opt.title, action: #selector(setGap(_:)), keyEquivalent: "")
