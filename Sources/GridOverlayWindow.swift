@@ -15,7 +15,7 @@ class GridOverlayWindowController: NSWindowController {
     var targetWindow: AXUIElement?
     
     init() {
-        let screenRect = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
+        let screenRect = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
         
         let window = GridWindow(
             contentRect: screenRect,
@@ -56,9 +56,9 @@ class GridOverlayWindowController: NSWindowController {
         // Ensure overlay appears on the active screen (where the mouse is)
         if let mouseLocation = NSEvent.mouseLocation as NSPoint?,
            let screen = NSScreen.screens.first(where: { NSMouseInRect(mouseLocation, $0.frame, false) }) {
-            self.window?.setFrame(screen.frame, display: true)
+            self.window?.setFrame(screen.visibleFrame, display: true)
         } else if let mainScreen = NSScreen.main {
-            self.window?.setFrame(mainScreen.frame, display: true)
+            self.window?.setFrame(mainScreen.visibleFrame, display: true)
         }
         
         super.showWindow(sender)

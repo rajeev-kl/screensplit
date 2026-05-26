@@ -34,7 +34,7 @@ struct GridOverlayView: View {
     var columns: Int {
         if columnsConfig > 0 { return columnsConfig }
         if let screen = NSScreen.main {
-            return max(4, Int(screen.frame.width / 400))
+            return max(4, Int(screen.visibleFrame.width / 400))
         }
         return 8
     }
@@ -42,7 +42,7 @@ struct GridOverlayView: View {
     var rows: Int {
         if rowsConfig > 0 { return rowsConfig }
         if let screen = NSScreen.main {
-            return max(3, Int(screen.frame.height / 300))
+            return max(3, Int(screen.visibleFrame.height / 300))
         }
         return 4
     }
@@ -70,8 +70,8 @@ struct GridOverlayView: View {
                 let localY = gridPadding + CGFloat(minRow) * (cellHeight + gridSpacing)
                 
                 let primaryScreen = NSScreen.screens[0]
-                let screenTopLeftX = windowScreen.frame.origin.x
-                let screenTopLeftY = primaryScreen.frame.height - (windowScreen.frame.origin.y + windowScreen.frame.height)
+                let screenTopLeftX = windowScreen.visibleFrame.minX
+                let screenTopLeftY = primaryScreen.frame.height - windowScreen.visibleFrame.maxY
                 
                 let globalX = screenTopLeftX + localX
                 let globalY = screenTopLeftY + localY
