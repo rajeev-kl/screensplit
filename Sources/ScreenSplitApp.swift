@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ServiceManagement
 
 @main
 struct ScreenSplitApp: App {
@@ -46,6 +47,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     var columnsMenu: NSMenu!
     var rowsMenu: NSMenu!
+    var launchAtStartupItem: NSMenuItem!
     
     func setupMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -112,11 +114,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(configItem)
         
         menu.addItem(NSMenuItem.separator())
+        
+        // Launch at startup
+        launchAtStartupItem = NSMenuItem(title: "Launch at Startup", action: #selector(toggleLaunchAtStartup), keyEquivalent: "")
+        launchAtStartupItem.target = self
+        menu.addItem(launchAtStartupItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
         menu.addItem(NSMenuItem(title: "Quit ScreenSplit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
         statusItem.menu = menu
         
         updateMenuStates()
+    }
+    
+    @objc func toggleLaunchAtStartup() {
+        if #available(macOS 13.0, *) {
+            do {
+                if SMAppService.mainApp.status == .enabled {
+                    try SMAppService.mainApp.unregister()
+                } else {
+                    try SMAppService.mainApp.register()
+                }
+                updateMenuStates()
+            } catch {
+                print("Failed to toggle launch at startup: \(error)")
+            }
+        } else {
+            print("Launch at startup requires macOS 13.0 or later.")
+        }
     }
     
     @objc func setColumns(_ sender: NSMenuItem) {
@@ -147,6 +174,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         for item in rowsMenu.items {
             item.state = (item.tag == rows) ? .on : .off
+        }
+        
+        if #available(macOS 13.0, *) {
+            launchAtStartupItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
         }
     }
     
