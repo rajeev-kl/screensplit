@@ -2,6 +2,12 @@ import Cocoa
 import SwiftUI
 import ApplicationServices
 
+class GridWindow: NSWindow {
+    override var canBecomeKey: Bool {
+        return true
+    }
+}
+
 class GridOverlayWindowController: NSWindowController {
     var overlayWindow: NSWindow!
     
@@ -11,7 +17,7 @@ class GridOverlayWindowController: NSWindowController {
     init() {
         let screenRect = NSScreen.main?.frame ?? NSRect(x: 0, y: 0, width: 800, height: 600)
         
-        let window = NSWindow(
+        let window = GridWindow(
             contentRect: screenRect,
             styleMask: [.borderless],
             backing: .buffered,
@@ -27,9 +33,14 @@ class GridOverlayWindowController: NSWindowController {
         super.init(window: window)
         self.overlayWindow = window
         
-        let contentView = GridOverlayView { [weak self] rect in
-            self?.applyGridRect(rect)
-        }
+        let contentView = GridOverlayView(
+            onConfirm: { [weak self] rect in
+                self?.applyGridRect(rect)
+            },
+            onCancel: { [weak self] in
+                self?.close()
+            }
+        )
         
         window.contentView = NSHostingView(rootView: contentView)
     }

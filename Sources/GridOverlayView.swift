@@ -18,9 +18,11 @@ struct GridSelection {
 
 struct GridOverlayView: View {
     var onConfirm: (CGRect) -> Void
+    var onCancel: () -> Void
     
     @State private var selection: GridSelection?
     @State private var dragStart: CGPoint?
+    @State private var localEventMonitor: Any?
     
     let gridPadding: CGFloat = 0
     let gridSpacing: CGFloat = 0
@@ -47,6 +49,41 @@ struct GridOverlayView: View {
     
     var body: some View {
         GeometryReader { geometry in
+            
+            let confirmSelection = {
+                guard let sel = selection else { return }
+                
+                let cellWidth = (geometry.size.width - (gridPadding * 2) - CGFloat(columns - 1) * gridSpacing) / CGFloat(columns)
+                let cellHeight = (geometry.size.height - (gridPadding * 2) - CGFloat(rows - 1) * gridSpacing) / CGFloat(rows)
+                
+                let minCol = min(sel.startColumn, sel.endColumn)
+                let maxCol = max(sel.startColumn, sel.endColumn)
+                let minRow = min(sel.startRow, sel.endRow)
+                let maxRow = max(sel.startRow, sel.endRow)
+                
+                let windowScreen = NSApp.windows.first(where: { $0.isKeyWindow || $0.level == .floating })?.screen ?? NSScreen.main!
+                
+                let width = CGFloat(maxCol - minCol + 1) * cellWidth + CGFloat(maxCol - minCol) * gridSpacing
+                let height = CGFloat(maxRow - minRow + 1) * cellHeight + CGFloat(maxRow - minRow) * gridSpacing
+                
+                let localX = gridPadding + CGFloat(minCol) * (cellWidth + gridSpacing)
+                let localY = gridPadding + CGFloat(minRow) * (cellHeight + gridSpacing)
+                
+                let primaryScreen = NSScreen.screens[0]
+                let screenTopLeftX = windowScreen.frame.origin.x
+                let screenTopLeftY = primaryScreen.frame.height - (windowScreen.frame.origin.y + windowScreen.frame.height)
+                
+                let globalX = screenTopLeftX + localX
+                let globalY = screenTopLeftY + localY
+                
+                let finalRect = CGRect(x: globalX, y: globalY, width: width, height: height)
+                
+                onConfirm(finalRect)
+                
+                selection = nil
+                dragStart = nil
+            }
+            
             ZStack {
                 // Background
                 Color.black.opacity(0.4)
@@ -88,44 +125,98 @@ struct GridOverlayView: View {
                         
                         selection = GridSelection(startColumn: startCol, startRow: startRow, endColumn: endCol, endRow: endRow)
                     }
-                    .onEnded { value in
-                        guard let sel = selection else { return }
-                        
-                        let cellWidth = (geometry.size.width - (gridPadding * 2) - CGFloat(columns - 1) * gridSpacing) / CGFloat(columns)
-                        let cellHeight = (geometry.size.height - (gridPadding * 2) - CGFloat(rows - 1) * gridSpacing) / CGFloat(rows)
-                        
-                        let minCol = min(sel.startColumn, sel.endColumn)
-                        let maxCol = max(sel.startColumn, sel.endColumn)
-                        let minRow = min(sel.startRow, sel.endRow)
-                        let maxRow = max(sel.startRow, sel.endRow)
-                        
-                        let windowScreen = NSApp.windows.first(where: { $0.isKeyWindow || $0.level == .floating })?.screen ?? NSScreen.main!
-                        
-                        let width = CGFloat(maxCol - minCol + 1) * cellWidth + CGFloat(maxCol - minCol) * gridSpacing
-                        let height = CGFloat(maxRow - minRow + 1) * cellHeight + CGFloat(maxRow - minRow) * gridSpacing
-                        
-                        let localX = gridPadding + CGFloat(minCol) * (cellWidth + gridSpacing)
-                        let localY = gridPadding + CGFloat(minRow) * (cellHeight + gridSpacing)
-                        
-                        // Global top-left of the current screen in AX coordinates
-                        // AX coordinates: (0,0) is top-left of primary screen.
-                        // NSScreen coordinates: (0,0) is bottom-left of primary screen.
-                        let primaryScreen = NSScreen.screens[0]
-                        let screenTopLeftX = windowScreen.frame.origin.x
-                        let screenTopLeftY = primaryScreen.frame.height - (windowScreen.frame.origin.y + windowScreen.frame.height)
-                        
-                        let globalX = screenTopLeftX + localX
-                        let globalY = screenTopLeftY + localY
-                        
-                        let finalRect = CGRect(x: globalX, y: globalY, width: width, height: height)
-                        
-                        onConfirm(finalRect)
-                        
-                        // Reset
-                        selection = nil
-                        dragStart = nil
+                    .onEnded { _ in
+                        confirmSelection()
                     }
             )
+            .onAppear {
+                localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                    let keyCode = event.keyCode
+                    let isShift = event.modifierFlags.contains(.shift)
+                    
+                    // Return (Enter)
+                    if keyCode == 36 {
+                        confirmSelection()
+                        return nil
+                    }
+                    
+                    // Escape
+                    if keyCode == 53 {
+                        selection = nil
+                        dragStart = nil
+                        onCancel()
+                        return nil
+                    }
+                    
+                    // Arrow keys: Left 123, Right 124, Down 125, Up 126
+                    if [123, 124, 125, 126].contains(keyCode) {
+                        if selection == nil {
+                            // Start with center
+                            let c = columns / 2
+                            let r = rows / 2
+                            selection = GridSelection(startColumn: c, startRow: r, endColumn: c, endRow: r)
+                            return nil
+                        }
+                        
+                        var sel = selection!
+                        
+                        if isShift {
+                            // Expand/shrink endColumn/endRow
+                            switch keyCode {
+                            case 123: // Left
+                                sel.endColumn = max(0, sel.endColumn - 1)
+                            case 124: // Right
+                                sel.endColumn = min(columns - 1, sel.endColumn + 1)
+                            case 125: // Down
+                                sel.endRow = min(rows - 1, sel.endRow + 1)
+                            case 126: // Up
+                                sel.endRow = max(0, sel.endRow - 1)
+                            default: break
+                            }
+                        } else {
+                            // Move whole selection block
+                            let minC = min(sel.startColumn, sel.endColumn)
+                            let maxC = max(sel.startColumn, sel.endColumn)
+                            let minR = min(sel.startRow, sel.endRow)
+                            let maxR = max(sel.startRow, sel.endRow)
+                            
+                            let width = maxC - minC
+                            let height = maxR - minR
+                            
+                            var newMinC = minC
+                            var newMinR = minR
+                            
+                            switch keyCode {
+                            case 123: // Left
+                                newMinC = max(0, minC - 1)
+                            case 124: // Right
+                                newMinC = min(columns - 1 - width, minC + 1)
+                            case 125: // Down
+                                newMinR = min(rows - 1 - height, minR + 1)
+                            case 126: // Up
+                                newMinR = max(0, minR - 1)
+                            default: break
+                            }
+                            
+                            sel.startColumn = newMinC
+                            sel.endColumn = newMinC + width
+                            sel.startRow = newMinR
+                            sel.endRow = newMinR + height
+                        }
+                        
+                        selection = sel
+                        return nil
+                    }
+                    
+                    return event
+                }
+            }
+            .onDisappear {
+                if let monitor = localEventMonitor {
+                    NSEvent.removeMonitor(monitor)
+                    localEventMonitor = nil
+                }
+            }
         }
         .edgesIgnoringSafeArea(.all)
     }
