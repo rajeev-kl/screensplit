@@ -22,5 +22,7 @@
     <string>NSApplication</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Aqueduct needs to control windows to tile them.</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
 </dict>
 </plist>

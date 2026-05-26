@@ -10,6 +10,10 @@ mkdir -p "${APP_MACOS}"
 echo "Copying Info.plist..."
 cp Info.plist "${APP_BUNDLE}/Contents/"
 
+echo "Copying AppIcon.icns..."
+mkdir -p "${APP_BUNDLE}/Contents/Resources"
+cp AppIcon.icns "${APP_BUNDLE}/Contents/Resources/"
+
 echo "Compiling Swift files..."
 swiftc Sources/*.swift -o "${APP_MACOS}/${APP_NAME}" \
     -framework Cocoa \

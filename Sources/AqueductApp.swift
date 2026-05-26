@@ -115,7 +115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func setupMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "squareshape.split.3x3", accessibilityDescription: "Aqueduct")
+            button.image = NSImage(systemSymbolName: "water.waves", accessibilityDescription: "Aqueduct")
         }
         
         let menu = NSMenu()
