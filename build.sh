@@ -38,6 +38,16 @@ if [ $? -eq 0 ]; then
         codesign --force --deep --sign - "${APP_BUNDLE}"
     fi
     echo "Build successful! Application is ready at ${APP_BUNDLE}"
+    
+    echo "Packaging into Aqueduct.dmg with Applications shortcut..."
+    rm -f Aqueduct.dmg
+    rm -rf dmg_root
+    mkdir -p dmg_root
+    cp -R "${APP_BUNDLE}" dmg_root/
+    ln -s /Applications dmg_root/Applications
+    hdiutil create -volname "Aqueduct" -srcfolder dmg_root -ov -format UDZO Aqueduct.dmg
+    rm -rf dmg_root
+    echo "DMG successfully created at Aqueduct.dmg"
 else
     echo "Build failed."
     exit 1
