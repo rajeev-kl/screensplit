@@ -4,7 +4,7 @@ import ServiceManagement
 import Carbon
 
 @main
-struct ScreenSplitApp: App {
+struct AqueductApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
@@ -21,7 +21,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationWillFinishLaunching(_ notification: Notification) {
         // Ensure only one instance of the app runs at a time
-        let bundleID = Bundle.main.bundleIdentifier ?? "com.rajeev.ScreenSplit"
+        let bundleID = Bundle.main.bundleIdentifier ?? "com.rajeev.Aqueduct"
         let runningApps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
         
         if runningApps.count > 1 {
@@ -115,7 +115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func setupMenu() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "squareshape.split.3x3", accessibilityDescription: "ScreenSplit")
+            button.image = NSImage(systemSymbolName: "squareshape.split.3x3", accessibilityDescription: "Aqueduct")
         }
         
         let menu = NSMenu()
@@ -225,7 +225,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
-        menu.addItem(NSMenuItem(title: "Quit ScreenSplit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        menu.addItem(NSMenuItem(title: "Quit Aqueduct", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
         statusItem.menu = menu
         
